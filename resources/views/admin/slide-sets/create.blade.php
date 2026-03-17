@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Add Slide')
+@section('title', 'Add Experience')
 @section('body_class', 'min-h-screen bg-gradient-to-b from-violet-500 to-white py-10')
 
 @section('content')
@@ -8,33 +8,14 @@
     <div class="max-w-3xl mx-auto px-4">
         @include('admin.partials.topbar')
 
-        <h1 class="text-2xl font-semibold text-slate-900 mb-6">Add Slide</h1>
+        <h1 class="text-2xl font-semibold text-slate-900 mb-6">Add Experience</h1>
 
         <div class="bg-white rounded-2xl shadow-lg p-6">
-            <form method="POST" action="{{ route('slides.store') }}" class="space-y-4" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('slide-sets.store') }}" class="space-y-4" enctype="multipart/form-data">
                 @csrf
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Experience</label>
-                    <select name="slide_set_id"
-                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">
-                        <option value="">Select experience</option>
-                        @foreach($slideSets as $slideSet)
-                            <option value="{{ $slideSet->id }}" @selected((string) old('slide_set_id') === (string) $slideSet->id)>
-                                {{ $slideSet->title }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('slide_set_id')
-                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                    <p class="mt-1 text-xs text-slate-500">
-                        Need a new experience first? <a href="{{ route('slide-sets.create') }}" class="text-violet-700 hover:underline">Create experience</a>.
-                    </p>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Title</label>
+                    <label class="block text-sm font-medium text-slate-700">Set Title</label>
                     <input type="text" name="title" value="{{ old('title') }}"
                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">
                     @error('title')
@@ -43,20 +24,19 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Slide Image</label>
-                    <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.webp,.gif"
-                           class="mt-1 block w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-violet-100 file:text-violet-700 hover:file:bg-violet-200">
-                    <p class="mt-1 text-xs text-slate-500">Allowed: JPG, PNG, WEBP, GIF. Max size: 5MB.</p>
-                    @error('image_file')
+                    <label class="block text-sm font-medium text-slate-700">Set Description</label>
+                    <textarea name="description" rows="3"
+                              class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">{{ old('description') }}</textarea>
+                    @error('description')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Description</label>
-                    <textarea name="description" rows="3"
-                              class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">{{ old('description') }}</textarea>
-                    @error('description')
+                    <label class="block text-sm font-medium text-slate-700">Thumbnail</label>
+                    <input type="file" name="thumbnail_file" accept=".jpg,.jpeg,.png,.webp,.gif"
+                           class="mt-1 block w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-violet-100 file:text-violet-700 hover:file:bg-violet-200">
+                    @error('thumbnail_file')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -79,13 +59,13 @@
                 </div>
 
                 <div class="pt-4 flex items-center justify-between">
-                    <a href="{{ route('slides.index') }}"
+                    <a href="{{ route('slide-sets.index') }}"
                        class="text-sm text-slate-600 hover:text-slate-800">
                         Cancel
                     </a>
                     <button type="submit"
                             class="inline-flex items-center rounded-xl border border-violet-500 bg-violet-500 text-white py-2 px-4 text-sm font-medium shadow-sm hover:bg-violet-600 hover:border-violet-600 transition">
-                        Save Slide
+                        Save Experience
                     </button>
                 </div>
             </form>

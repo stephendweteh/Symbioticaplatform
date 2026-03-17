@@ -16,6 +16,25 @@
                 @method('PUT')
 
                 <div>
+                    <label class="block text-sm font-medium text-slate-700">Experience</label>
+                    <select name="slide_set_id"
+                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">
+                        <option value="">Select experience</option>
+                        @foreach($slideSets as $slideSet)
+                            <option value="{{ $slideSet->id }}" @selected((string) old('slide_set_id', $slide->slide_set_id) === (string) $slideSet->id)>
+                                {{ $slideSet->title }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('slide_set_id')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-slate-500">
+                        Manage experiences in <a href="{{ route('slide-sets.index') }}" class="text-violet-700 hover:underline">Experiences</a>.
+                    </p>
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-slate-700">Title</label>
                     <input type="text" name="title" value="{{ old('title', $slide->title) }}"
                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">

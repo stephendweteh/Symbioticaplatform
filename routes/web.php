@@ -11,6 +11,7 @@ use App\Http\Controllers\AdminRegistrationFieldController;
 use App\Http\Controllers\AdminSurveyFieldController;
 use App\Http\Controllers\AdminSettingController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\SlideSetController;
 use App\Models\AppSetting;
 
 Route::get('/', function () {
@@ -40,6 +41,8 @@ Route::post('/register', [RegisterController::class, 'store'])->name('register.s
 
 Route::get('/engagement', [EngagementController::class, 'showForm'])->name('engagement.index');
 Route::post('/engagement/start', [EngagementController::class, 'start'])->name('engagement.start');
+Route::get('/engagement/sets/{member}', [EngagementController::class, 'showSets'])->name('engagement.sets');
+Route::get('/engagement/sets/{member}/{slideSet}', [EngagementController::class, 'startSet'])->name('engagement.start-set');
 Route::post('/engagement/progress', [EngagementController::class, 'updateProgress'])->name('engagement.progress');
 
 Route::get('/survey', [SurveyController::class, 'showForm'])->name('survey.index');
@@ -55,6 +58,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
     Route::put('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
     Route::delete('/admin/profile', [AdminController::class, 'destroyProfile'])->name('admin.profile.destroy');
+    Route::resource('/admin/slide-sets', SlideSetController::class)->except(['show']);
     Route::resource('/admin/slides', SlideController::class)->except(['show']);
     Route::resource('/admin/registration-fields', AdminRegistrationFieldController::class)->except(['show']);
     Route::resource('/admin/survey-fields', AdminSurveyFieldController::class)->except(['show']);

@@ -20,7 +20,7 @@
         </div>
 
         <p class="text-slate-500 mb-4 text-center text-sm">
-            Enter your 4-digit code to start or resume the Experience.
+            Enter your 4-digit code, then choose which experience to view.
         </p>
 
         <form method="POST" action="{{ route('engagement.start') }}" class="space-y-4">

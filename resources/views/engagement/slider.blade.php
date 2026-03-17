@@ -5,9 +5,13 @@
 
 @section('content')
 <div class="min-h-screen flex items-center justify-center">
-    <div class="max-w-[1200px] w-full bg-white rounded-2xl shadow-xl p-8 mx-4">
+    <div x-data="engagementSlider({{ $member->id }}, {{ $slides->count() }}, @js($nextSet?->id), @js(route('engagement.sets', $member)), @js($nextSet ? route('engagement.start-set', ['member' => $member->id, 'slideSet' => $nextSet->id]) : null))"
+         class="max-w-[1200px] w-full bg-white rounded-2xl shadow-xl p-8 mx-4">
         <div class="flex justify-between items-center mb-4 text-sm text-slate-600">
             <div>
+                @if(isset($slideSet))
+                    <p class="text-xs uppercase tracking-wide text-violet-700 font-semibold">{{ $slideSet->title }}</p>
+                @endif
                 <p class="font-semibold text-slate-900">{{ $member->full_name }}</p>
                 <p>Code: <span class="font-mono">{{ $member->unique_code }}</span></p>
             </div>
@@ -23,7 +27,7 @@
             </div>
         </div>
 
-        <div x-data="engagementSlider({{ $member->id }}, {{ $slides->count() }})" class="space-y-4">
+        <div class="space-y-4">
             <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 h-[900px] max-h-[90vh] flex items-center justify-center"
                  @touchstart.passive="touchStart($event)"
                  @touchend.passive="touchEnd($event)">
@@ -74,10 +78,35 @@
 
                 <button type="button"
                         @click="finish"
-                        x-show="totalSlides > 0 && currentIndex === totalSlides - 1"
+                        x-show="totalSlides > 0 && currentIndex === totalSlides - 1 && !showCompletionActions"
                         class="inline-flex items-center justify-center rounded-xl border border-emerald-500 bg-emerald-500 text-white py-2 px-6 text-sm font-medium shadow-sm hover:bg-emerald-600 hover:border-emerald-600">
                     Finish
                 </button>
+            </div>
+
+            <div x-show="showCompletionActions"
+                 x-cloak
+                 class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <p class="text-sm font-medium text-emerald-800 mb-3">
+                    This experience is completed. What would you like to do next?
+                </p>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button"
+                            @click="goToNextSet"
+                            x-show="nextSetId"
+                            class="inline-flex items-center justify-center rounded-xl border border-violet-500 bg-violet-500 text-white py-2 px-4 text-sm font-medium shadow-sm hover:bg-violet-600 hover:border-violet-600">
+                        View Next Experience
+                    </button>
+                    <button type="button"
+                            @click="goToSetSelection"
+                            class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 py-2 px-4 text-sm font-medium shadow-sm hover:bg-slate-50">
+                        Choose Another Experience
+                    </button>
+                    <a href="{{ route('home') }}"
+                       class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 py-2 px-4 text-sm font-medium shadow-sm hover:bg-slate-50">
+                        Back Home
+                    </a>
+                </div>
             </div>
 
         </div>
@@ -88,11 +117,15 @@
 @push('scripts')
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script>
-    function engagementSlider(memberId, totalSlides) {
+    function engagementSlider(memberId, totalSlides, nextSetId, setSelectionUrl, nextSetUrl) {
         return {
             memberId,
             totalSlides,
+            nextSetId,
+            setSelectionUrl,
+            nextSetUrl,
             currentIndex: 0,
+            showCompletionActions: false,
             touchXStart: 0,
             touchXEnd: 0,
             async update(endedEarly = false) {
@@ -126,12 +159,14 @@
                 }
             },
             next() {
+                this.showCompletionActions = false;
                 if (this.currentIndex < this.totalSlides - 1) {
                     this.currentIndex++;
                     this.update(false);
                 }
             },
             prev() {
+                this.showCompletionActions = false;
                 if (this.currentIndex > 0) {
                     this.currentIndex--;
                     this.update(false);
@@ -139,11 +174,21 @@
             },
             async finish() {
                 await this.update(false);
-                window.location.href = '{{ route('home') }}';
+                this.showCompletionActions = true;
             },
             async endPresentation() {
                 await this.update(true);
                 window.location.href = '{{ route('home') }}';
+            },
+            goToSetSelection() {
+                window.location.href = this.setSelectionUrl;
+            },
+            goToNextSet() {
+                if (this.nextSetUrl) {
+                    window.location.href = this.nextSetUrl;
+                } else {
+                    this.goToSetSelection();
+                }
             },
             touchStart(event) {
                 this.touchXStart = event.changedTouches[0].screenX;

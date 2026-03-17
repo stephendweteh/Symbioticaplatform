@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Slide;
+use App\Models\SlideSet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -13,7 +14,9 @@ class SlideController extends Controller
      */
     public function index()
     {
-        $slides = Slide::orderBy('order_number')->paginate(20);
+        $slides = Slide::with('slideSet')
+            ->orderBy('order_number')
+            ->paginate(20);
 
         return view('admin.slides.index', compact('slides'));
     }
@@ -23,7 +26,9 @@ class SlideController extends Controller
      */
     public function create()
     {
-        return view('admin.slides.create');
+        $slideSets = SlideSet::orderBy('order_number')->orderBy('id')->get();
+
+        return view('admin.slides.create', compact('slideSets'));
     }
 
     /**
@@ -32,6 +37,7 @@ class SlideController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
+            'slide_set_id' => ['required', 'integer', 'exists:slide_sets,id'],
             'title' => ['required', 'string', 'max:255'],
             'image_file' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
             'description' => ['nullable', 'string'],
@@ -61,7 +67,9 @@ class SlideController extends Controller
      */
     public function edit(Slide $slide)
     {
-        return view('admin.slides.edit', compact('slide'));
+        $slideSets = SlideSet::orderBy('order_number')->orderBy('id')->get();
+
+        return view('admin.slides.edit', compact('slide', 'slideSets'));
     }
 
     /**
@@ -70,6 +78,7 @@ class SlideController extends Controller
     public function update(Request $request, Slide $slide)
     {
         $data = $request->validate([
+            'slide_set_id' => ['required', 'integer', 'exists:slide_sets,id'],
             'title' => ['required', 'string', 'max:255'],
             'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
             'description' => ['nullable', 'string'],

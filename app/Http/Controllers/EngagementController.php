@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Engagement;
 use App\Models\Member;
 use App\Models\Slide;
+use App\Models\SlideSet;
 use Illuminate\Http\Request;
 
 class EngagementController extends Controller
@@ -28,12 +29,44 @@ class EngagementController extends Controller
                 ->withInput();
         }
 
-        $slides = Slide::where('is_active', true)
+        return $this->renderSetSelection($member);
+    }
+
+    public function showSets(Member $member)
+    {
+        return $this->renderSetSelection($member);
+    }
+
+    public function startSet(Member $member, SlideSet $slideSet)
+    {
+        if (! $slideSet->is_active) {
+            return redirect()
+                ->route('engagement.sets', $member)
+                ->withErrors(['slide_set' => 'Selected experience is inactive.']);
+        }
+
+        $slides = Slide::query()
+            ->where('slide_set_id', $slideSet->id)
+            ->where('is_active', true)
             ->orderBy('order_number')
             ->get();
 
+        if ($slides->isEmpty()) {
+            return redirect()
+                ->route('engagement.sets', $member)
+                ->withErrors(['slide_set' => 'Selected experience has no active slides.']);
+        }
+
+        $nextSet = SlideSet::query()
+            ->where('is_active', true)
+            ->where('order_number', '>', $slideSet->order_number)
+            ->whereHas('slides', fn ($query) => $query->where('is_active', true))
+            ->orderBy('order_number')
+            ->orderBy('id')
+            ->first();
+
         $engagement = Engagement::firstOrNew(['member_id' => $member->id]);
-        if (!$engagement->exists) {
+        if (! $engagement->exists) {
             $engagement->started_at = now();
             $engagement->status = 'pending';
             $engagement->slides_viewed = 0;
@@ -47,6 +80,8 @@ class EngagementController extends Controller
             'member' => $member,
             'engagement' => $engagement,
             'slides' => $slides,
+            'slideSet' => $slideSet,
+            'nextSet' => $nextSet,
         ]);
     }
 
@@ -111,6 +146,24 @@ class EngagementController extends Controller
             'status' => $status,
             'completion_percentage' => $completion,
             'star_rating' => $stars,
+        ]);
+    }
+
+    protected function renderSetSelection(Member $member)
+    {
+        $slideSets = SlideSet::query()
+            ->where('is_active', true)
+            ->whereHas('slides', fn ($query) => $query->where('is_active', true))
+            ->withCount([
+                'slides as active_slides_count' => fn ($query) => $query->where('is_active', true),
+            ])
+            ->orderBy('order_number')
+            ->orderBy('id')
+            ->get();
+
+        return view('engagement.select-set', [
+            'member' => $member,
+            'slideSets' => $slideSets,
         ]);
     }
 }
