@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AppSetting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -9,12 +10,17 @@ class SmsService
 {
     public function send(string $to, string $message): bool
     {
-        $sid = (string) config('services.twilio.account_sid');
-        $token = (string) config('services.twilio.auth_token');
-        $from = (string) config('services.twilio.from');
+        $settings = AppSetting::query()
+            ->where('is_active', true)
+            ->pluck('setting_value', 'setting_key')
+            ->toArray();
 
-        if ($sid === '' || $token === '' || $from === '') {
-            Log::warning('SMS not sent: missing Twilio configuration.', [
+        $apiKey = trim((string) ($settings['arkesel_api_key'] ?? ''));
+        $senderId = trim((string) ($settings['arkesel_sender_id'] ?? ''));
+        $baseUrl = rtrim((string) ($settings['arkesel_base_url'] ?? 'https://sms.arkesel.com'), '/');
+
+        if ($apiKey === '' || $senderId === '') {
+            Log::warning('SMS not sent: missing Arkesel configuration.', [
                 'to' => $to,
                 'message' => $message,
             ]);
@@ -22,19 +28,22 @@ class SmsService
             return false;
         }
 
-        $response = Http::asForm()
-            ->withBasicAuth($sid, $token)
-            ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
-                'To' => $to,
-                'From' => $from,
-                'Body' => $message,
+        $response = Http::withHeaders([
+            'api-key' => $apiKey,
+            'Accept' => 'application/json',
+        ])->post($baseUrl . '/api/v2/sms/send', [
+            'sender' => $senderId,
+            'message' => $message,
+            'recipients' => [$to],
+            'sandbox' => false,
+            'date_schedule' => null,
             ]);
 
         if ($response->successful()) {
             return true;
         }
 
-        Log::error('SMS send failed.', [
+        Log::error('Arkesel SMS send failed.', [
             'to' => $to,
             'status' => $response->status(),
             'response' => $response->body(),

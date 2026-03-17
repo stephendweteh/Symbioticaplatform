@@ -234,7 +234,7 @@ class RegisterController extends Controller
         </tr>
         <tr>
             <td style="padding:16px 24px 22px;font-size:12px;color:#64748b;border-top:1px solid #e2e8f0;">
-                This is an automated message from {$safeAppName}.
+                This is an automated message.
             </td>
         </tr>
     </table>

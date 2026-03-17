@@ -6,6 +6,7 @@
                 class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">
             <option value="email_content" @selected($selectedCategory === 'email_content')>Email Content</option>
             <option value="smtp_connection" @selected($selectedCategory === 'smtp_connection')>SMTP Connection</option>
+            <option value="sms_connection" @selected($selectedCategory === 'sms_connection')>SMS Connection</option>
         </select>
         @error('category')
             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>

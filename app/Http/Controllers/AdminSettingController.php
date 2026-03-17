@@ -141,7 +141,7 @@ class AdminSettingController extends Controller
     protected function validateSetting(Request $request, ?AppSetting $existingSetting = null): array
     {
         $validated = $request->validate([
-            'category' => ['required', 'in:email_content,smtp_connection'],
+            'category' => ['required', 'in:email_content,smtp_connection,sms_connection'],
             'label' => ['required', 'string', 'max:255'],
             'setting_key' => [
                 'required',
@@ -272,7 +272,7 @@ class AdminSettingController extends Controller
         </tr>
         <tr>
             <td style="padding:16px 24px 22px;font-size:12px;color:#64748b;border-top:1px solid #e2e8f0;">
-                This is an automated message from {$safeAppName}.
+                This is an automated message.
             </td>
         </tr>
     </table>
