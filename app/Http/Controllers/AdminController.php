@@ -132,12 +132,16 @@ class AdminController extends Controller
             $rows = $this->membersQuery($sortBy, $sortDir)
                 ->get()
                 ->map(function ($member) {
+                    $county = $member->county
+                        ?: data_get($member->additional_data, 'county')
+                        ?: data_get($member->additional_data, 'regions');
                     return [
                         'id' => $member->id,
                         'full_name' => $member->full_name,
                         'email' => $member->email,
                         'phone' => $member->phone,
                         'gender' => $member->gender,
+                        'county' => $county,
                         'organization' => $member->organization,
                         'role' => $member->role,
                         'unique_code' => $member->unique_code,
@@ -171,16 +175,20 @@ class AdminController extends Controller
 
         $callback = function () use ($sortBy, $sortDir, $delimiter) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['ID', 'Full Name', 'Email', 'Phone', 'Gender', 'Organization', 'Role', 'Code', 'Registered At'], $delimiter);
+            fputcsv($handle, ['ID', 'Full Name', 'Email', 'Phone', 'Gender', 'County', 'Organization', 'Role', 'Code', 'Registered At'], $delimiter);
 
             $this->membersQuery($sortBy, $sortDir)->chunk(200, function ($members) use ($handle, $delimiter) {
                 foreach ($members as $member) {
+                    $county = $member->county
+                        ?: data_get($member->additional_data, 'county')
+                        ?: data_get($member->additional_data, 'regions');
                     fputcsv($handle, [
                         $member->id,
                         $member->full_name,
                         $member->email,
                         $member->phone,
                         $member->gender,
+                        $county,
                         $member->organization,
                         $member->role,
                         $member->unique_code,
@@ -319,6 +327,7 @@ class AdminController extends Controller
             'full_name' => 'Name',
             'unique_code' => 'Code',
             'email' => 'Email',
+            'county' => 'County',
             'organization' => 'Place of Practice (Institution)',
         ];
     }

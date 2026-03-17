@@ -79,7 +79,7 @@ class RegisterController extends Controller
 
         $uniqueCode = $this->generateUniqueCode();
 
-        $memberColumns = ['full_name', 'email', 'phone', 'gender', 'organization', 'role'];
+        $memberColumns = ['full_name', 'email', 'phone', 'gender', 'organization', 'role', 'county'];
         $memberData = [];
         $additionalData = [];
         foreach ($dynamicData as $key => $value) {
@@ -88,6 +88,11 @@ class RegisterController extends Controller
             } else {
                 $additionalData[$key] = $value;
             }
+        }
+
+        // Support legacy/admin-defined alias where county is captured as "regions".
+        if ((!array_key_exists('county', $memberData) || blank($memberData['county'])) && !blank($dynamicData['regions'] ?? null)) {
+            $memberData['county'] = $dynamicData['regions'];
         }
 
         if (!array_key_exists('full_name', $memberData) || blank($memberData['full_name'])) {

@@ -93,6 +93,7 @@
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Name</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Code</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Contact</th>
+                            <th class="px-3 py-2 text-left font-semibold text-slate-700">County</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Place of Practice (Institution)</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Engagement Status</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Survey</th>
@@ -128,6 +129,9 @@
                                     <div class="text-xs text-slate-500">{{ $member->phone }}</div>
                                 </td>
                                 <td class="px-3 py-2 text-sm text-slate-700">
+                                    {{ $member->county ?? data_get($member->additional_data, 'county') ?? data_get($member->additional_data, 'regions', '—') }}
+                                </td>
+                                <td class="px-3 py-2 text-sm text-slate-700">
                                     <div>{{ $member->organization }}</div>
                                     <div class="text-xs text-slate-500">{{ $member->role }}</div>
                                 </td>
@@ -154,7 +158,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-3 py-4 text-center text-sm text-slate-500">
+                                <td colspan="7" class="px-3 py-4 text-center text-sm text-slate-500">
                                     No registrations yet.
                                 </td>
                             </tr>

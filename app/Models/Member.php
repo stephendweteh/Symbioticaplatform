@@ -14,6 +14,7 @@ class Member extends Model
         'gender',
         'organization',
         'role',
+        'county',
         'unique_code',
         'additional_data',
     ];

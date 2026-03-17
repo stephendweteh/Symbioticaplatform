@@ -27,6 +27,7 @@
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Gender</th>
+                <th>County</th>
                 <th>Place of Practice (Institution)</th>
                 <th>Role</th>
                 <th>Code</th>
@@ -41,6 +42,7 @@
                     <td>{{ $member->email }}</td>
                     <td>{{ $member->phone }}</td>
                     <td>{{ $member->gender }}</td>
+                    <td>{{ $member->county ?? data_get($member->additional_data, 'county') ?? data_get($member->additional_data, 'regions') }}</td>
                     <td>{{ $member->organization }}</td>
                     <td>{{ $member->role }}</td>
                     <td>{{ $member->unique_code }}</td>
@@ -48,7 +50,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9">No registrations found.</td>
+                    <td colspan="10">No registrations found.</td>
                 </tr>
             @endforelse
         </tbody>
