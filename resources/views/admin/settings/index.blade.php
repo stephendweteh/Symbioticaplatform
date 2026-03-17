@@ -59,6 +59,24 @@
             </div>
         </div>
 
+        @if(auth('admin')->user()?->role === 'super_admin')
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-red-200">
+                <h2 class="text-lg font-semibold text-red-700 mb-2">Reset Platform Data</h2>
+                <p class="text-sm text-slate-600 mb-4">
+                    Clear all registrations, survey submissions, and engagement progress to start fresh.
+                    Email/SMS settings and other configurations will remain unchanged.
+                </p>
+                <form method="POST" action="{{ route('settings.clear-platform-data') }}">
+                    @csrf
+                    <button type="submit"
+                            onclick="return confirm('This will permanently clear registrations, surveys, and engagements. Continue?')"
+                            class="inline-flex items-center rounded-xl border border-red-300 bg-red-50 text-red-700 py-2 px-4 text-sm font-medium shadow-sm hover:bg-red-100 transition">
+                        Clear Registrations & Survey Data
+                    </button>
+                </form>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-lg p-6">
                 <h2 class="text-lg font-semibold text-slate-900 mb-4">Email Content</h2>

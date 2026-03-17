@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AppSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -63,12 +65,24 @@ class AdminSettingController extends Controller
         $settings = $this->getActiveSettings();
         $this->applyRuntimeSmtpSettings($settings);
 
-        $subject = '[Test] ' . ($settings['registration_email_subject'] ?? 'SMTP Test Email');
-        $body = 'This is a test email from Settings. Sent at ' . now()->toDateTimeString();
+        // Keep test emails fully separate from registration success emails.
+        $subject = $this->cleanEmailSubject($settings['test_email_subject'] ?? 'SMTP Delivery Test Email');
+        $bodyTemplate = $settings['test_email_body'] ?? 'This is a test email from Settings. It is only for SMTP verification.';
+        $body = strtr($bodyTemplate, [
+            '{name}' => 'Test User',
+            '{email}' => $validated['test_email'],
+            '{phone}' => 'N/A',
+            '{code}' => 'TEST',
+        ]) . "\n\nSent at: " . now()->toDateTimeString();
+        $logoUrlSetting = $settings['email_logo_url'] ?? null;
 
         try {
-            Mail::html('<p style="font-family:Arial,sans-serif;">' . e($body) . '</p>', function ($message) use ($validated, $subject) {
+            Mail::send([], [], function ($message) use ($validated, $subject, $body, $logoUrlSetting) {
+                $subject = $this->cleanEmailSubject($subject);
+                $logoSrc = $this->resolveEmailLogoSrc($message, $logoUrlSetting);
+                $html = $this->buildStyledEmailHtml($subject, $body, $logoSrc);
                 $message->to($validated['test_email'])->subject($subject);
+                $message->html($html);
             });
         } catch (\Throwable $exception) {
             return back()->with('error', 'Test email failed: ' . $exception->getMessage());
@@ -105,6 +119,23 @@ class AdminSettingController extends Controller
         $securityText = $encryption !== '' ? " using {$encryption} encryption setting" : '';
 
         return back()->with('success', "Delivery check passed: SMTP server {$host}:{$port} is reachable{$securityText}.");
+    }
+
+    public function clearPlatformData()
+    {
+        $admin = Auth::guard('admin')->user();
+        if (! $admin || $admin->role !== 'super_admin') {
+            abort(403);
+        }
+
+        DB::transaction(function () {
+            // Use DELETE (not TRUNCATE) so MySQL doesn't auto-commit and break transaction handling.
+            DB::table('engagements')->delete();
+            DB::table('surveys')->delete();
+            DB::table('members')->delete();
+        });
+
+        return back()->with('success', 'Platform data cleared. Registrations, surveys, and engagements have been reset.');
     }
 
     protected function validateSetting(Request $request, ?AppSetting $existingSetting = null): array
@@ -200,5 +231,83 @@ class AdminSettingController extends Controller
         }
 
         app('mail.manager')->forgetMailers();
+    }
+
+    protected function cleanEmailSubject(string $subject): string
+    {
+        $cleaned = preg_replace('/\[\s*test\s*\]\s*/i', '', $subject);
+        $cleaned = str_ireplace('[test]', '', (string) $cleaned);
+        $cleaned = trim((string) $cleaned);
+
+        return $cleaned !== '' ? $cleaned : 'Registration Confirmation';
+    }
+
+    protected function buildStyledEmailHtml(string $subject, string $message, string $logoSrc): string
+    {
+        $safeSubject = e($subject);
+        $safeMessage = nl2br(e($message));
+        $safeLogoUrl = e($logoSrc);
+        $safeAppName = e((string) config('app.name', 'Exhibition System'));
+
+        return <<<HTML
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$safeSubject}</title>
+</head>
+<body style="margin:0;padding:24px;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;">
+        <tr>
+            <td style="background:linear-gradient(180deg,#7c3aed 0%,#a78bfa 100%);padding:24px 20px;text-align:center;">
+                <img src="{$safeLogoUrl}" alt="{$safeAppName} logo" style="max-width:180px;height:auto;display:inline-block;">
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:24px;">
+                <h2 style="margin:0 0 12px;font-size:22px;line-height:1.2;color:#1e1b4b;">{$safeSubject}</h2>
+                <div style="font-size:15px;line-height:1.6;color:#334155;">{$safeMessage}</div>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:16px 24px 22px;font-size:12px;color:#64748b;border-top:1px solid #e2e8f0;">
+                This is an automated message from {$safeAppName}.
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    protected function resolveEmailLogoSrc($message, ?string $logoUrlSetting): string
+    {
+        $logoUrlSetting = trim((string) $logoUrlSetting);
+        if ($logoUrlSetting === '') {
+            return $this->embedLogoOrFallback($message, public_path('logo.png'), url('/logo.png'));
+        }
+
+        if (str_starts_with($logoUrlSetting, 'http://') || str_starts_with($logoUrlSetting, 'https://')) {
+            return $logoUrlSetting;
+        }
+
+        $relativePath = ltrim($logoUrlSetting, '/');
+        $absolutePath = public_path($relativePath);
+
+        return $this->embedLogoOrFallback($message, $absolutePath, url('/' . $relativePath));
+    }
+
+    protected function embedLogoOrFallback($message, string $absolutePath, string $fallbackSrc): string
+    {
+        if (! is_file($absolutePath)) {
+            return $fallbackSrc;
+        }
+
+        try {
+            return $message->embed($absolutePath);
+        } catch (\Throwable) {
+            return $fallbackSrc;
+        }
     }
 }

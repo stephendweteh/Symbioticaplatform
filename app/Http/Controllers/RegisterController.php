@@ -109,8 +109,7 @@ class RegisterController extends Controller
         $settings = $this->getNotificationSettings();
         $this->applyRuntimeSmtpSettings($settings);
 
-        $emailSubject = $settings['registration_email_subject'] ?? 'Registration Confirmation';
-        $emailSubject = preg_replace('/^\[Test\]\s*/i', '', (string) $emailSubject) ?: 'Registration Confirmation';
+        $emailSubject = $this->cleanEmailSubject($settings['registration_email_subject'] ?? 'Registration Confirmation');
         $emailBodyTemplate = $settings['registration_email_body'] ?? 'Thank you for registering. Your 4-digit code is: {code}';
         $confirmationMessage = strtr($emailBodyTemplate, [
             '{name}' => (string) $member->full_name,
@@ -119,11 +118,14 @@ class RegisterController extends Controller
             '{code}' => $uniqueCode,
         ]);
         $logoUrlSetting = $settings['email_logo_url'] ?? null;
-        $confirmationHtml = $this->buildStyledEmailHtml($emailSubject, $confirmationMessage, $logoUrlSetting);
 
         try {
-            Mail::html($confirmationHtml, function ($message) use ($member, $emailSubject) {
+            Mail::send([], [], function ($message) use ($member, $emailSubject, $confirmationMessage, $logoUrlSetting) {
+                $emailSubject = $this->cleanEmailSubject($emailSubject);
+                $logoSrc = $this->resolveEmailLogoSrc($message, $logoUrlSetting);
+                $confirmationHtml = $this->buildStyledEmailHtml($emailSubject, $confirmationMessage, $logoSrc);
                 $message->to($member->email)->subject($emailSubject);
+                $message->html($confirmationHtml);
             });
         } catch (\Throwable $exception) {
             Log::error('Registration confirmation email failed.', [
@@ -202,11 +204,11 @@ class RegisterController extends Controller
         app('mail.manager')->forgetMailers();
     }
 
-    protected function buildStyledEmailHtml(string $subject, string $message, ?string $logoUrlSetting = null): string
+    protected function buildStyledEmailHtml(string $subject, string $message, string $logoSrc): string
     {
         $safeSubject = e($subject);
         $safeMessage = nl2br(e($message));
-        $safeLogoUrl = e($this->resolveEmailLogoUrl($logoUrlSetting));
+        $safeLogoUrl = e($logoSrc);
         $safeAppName = e((string) config('app.name', 'Exhibition System'));
 
         return <<<HTML
@@ -241,17 +243,42 @@ class RegisterController extends Controller
 HTML;
     }
 
-    protected function resolveEmailLogoUrl(?string $logoUrlSetting): string
+    protected function resolveEmailLogoSrc($message, ?string $logoUrlSetting): string
     {
         $logoUrlSetting = trim((string) $logoUrlSetting);
         if ($logoUrlSetting === '') {
-            return url('/logo.png');
+            return $this->embedLogoOrFallback($message, public_path('logo.png'), url('/logo.png'));
         }
 
         if (str_starts_with($logoUrlSetting, 'http://') || str_starts_with($logoUrlSetting, 'https://')) {
             return $logoUrlSetting;
         }
 
-        return url('/' . ltrim($logoUrlSetting, '/'));
+        $relativePath = ltrim($logoUrlSetting, '/');
+        $absolutePath = public_path($relativePath);
+
+        return $this->embedLogoOrFallback($message, $absolutePath, url('/' . $relativePath));
+    }
+
+    protected function embedLogoOrFallback($message, string $absolutePath, string $fallbackSrc): string
+    {
+        if (! is_file($absolutePath)) {
+            return $fallbackSrc;
+        }
+
+        try {
+            return $message->embed($absolutePath);
+        } catch (\Throwable) {
+            return $fallbackSrc;
+        }
+    }
+
+    protected function cleanEmailSubject(string $subject): string
+    {
+        $cleaned = preg_replace('/\[\s*test\s*\]\s*/i', '', $subject);
+        $cleaned = preg_replace('/^\s*test\s*[:\-]\s*/i', '', (string) $cleaned);
+        $cleaned = trim((string) $cleaned);
+
+        return $cleaned !== '' ? $cleaned : 'Registration Confirmation';
     }
 }

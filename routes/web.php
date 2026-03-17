@@ -45,6 +45,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::resource('/admin/settings', AdminSettingController::class)->except(['show']);
     Route::post('/admin/settings/test-email', [AdminSettingController::class, 'sendTestEmail'])->name('settings.test-email');
     Route::post('/admin/settings/delivery-check', [AdminSettingController::class, 'deliveryCheck'])->name('settings.delivery-check');
+    Route::post('/admin/settings/clear-platform-data', [AdminSettingController::class, 'clearPlatformData'])->name('settings.clear-platform-data');
     Route::resource('/admin/users', AdminUserController::class)->except(['show'])->parameters([
         'users' => 'user',
     ]);

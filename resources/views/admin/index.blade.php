@@ -43,7 +43,7 @@
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Name</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Code</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Contact</th>
-                            <th class="px-3 py-2 text-left font-semibold text-slate-700">Org / Role</th>
+                            <th class="px-3 py-2 text-left font-semibold text-slate-700">Place of Practice (Institution)</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Engagement Status</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Survey</th>
                         </tr>
