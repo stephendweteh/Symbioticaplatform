@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Engagement;
 use App\Models\Member;
 use App\Models\Survey;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -13,9 +15,17 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $members = Member::latest()->with(['engagements', 'surveys'])->paginate(20);
+        [$sortBy, $sortDir] = $this->resolveMemberSort($request);
+
+        $members = $this->membersQuery($sortBy, $sortDir)
+            ->with(['engagements', 'surveys'])
+            ->paginate(20)
+            ->appends([
+                'sort_by' => $sortBy,
+                'sort_dir' => $sortDir,
+            ]);
 
         $stats = [
             'total_registrations' => Member::count(),
@@ -25,7 +35,9 @@ class AdminController extends Controller
             'survey_submissions' => Survey::count(),
         ];
 
-        return view('admin.index', compact('members', 'stats'));
+        $sortOptions = $this->memberSortOptions();
+
+        return view('admin.index', compact('members', 'stats', 'sortBy', 'sortDir', 'sortOptions'));
     }
 
     public function profile()
@@ -108,15 +120,60 @@ class AdminController extends Controller
         return redirect()->route('admin.login')->with('success', 'Profile deleted successfully.');
     }
 
-    public function exportRegistrations(): StreamedResponse
+    public function exportRegistrations(Request $request)
     {
-        $fileName = 'registrations.csv';
+        [$sortBy, $sortDir] = $this->resolveMemberSort($request);
+        $format = Str::lower((string) $request->query('format', 'csv'));
+        if (! in_array($format, ['csv', 'xls', 'json', 'pdf'], true)) {
+            $format = 'csv';
+        }
 
-        $callback = function () {
+        if ($format === 'json') {
+            $rows = $this->membersQuery($sortBy, $sortDir)
+                ->get()
+                ->map(function ($member) {
+                    return [
+                        'id' => $member->id,
+                        'full_name' => $member->full_name,
+                        'email' => $member->email,
+                        'phone' => $member->phone,
+                        'gender' => $member->gender,
+                        'organization' => $member->organization,
+                        'role' => $member->role,
+                        'unique_code' => $member->unique_code,
+                        'registered_at' => (string) $member->created_at,
+                    ];
+                });
+
+            return response($rows->toJson(JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 200, [
+                'Content-Type' => 'application/json',
+                'Content-Disposition' => 'attachment; filename="registrations.json"',
+            ]);
+        }
+
+        if ($format === 'pdf') {
+            $rows = $this->membersQuery($sortBy, $sortDir)->get();
+            $pdf = Pdf::loadView('admin.exports.registrations-pdf', [
+                'rows' => $rows,
+                'sortBy' => $sortBy,
+                'sortDir' => $sortDir,
+                'generatedAt' => now(),
+            ])->setPaper('a4', 'landscape');
+
+            return $pdf->download('registrations.pdf');
+        }
+
+        $delimiter = $format === 'xls' ? "\t" : ',';
+        $fileName = 'registrations.' . $format;
+        $contentType = $format === 'xls'
+            ? 'application/vnd.ms-excel'
+            : 'text/csv';
+
+        $callback = function () use ($sortBy, $sortDir, $delimiter) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['ID', 'Full Name', 'Email', 'Phone', 'Gender', 'Organization', 'Role', 'Code', 'Registered At']);
+            fputcsv($handle, ['ID', 'Full Name', 'Email', 'Phone', 'Gender', 'Organization', 'Role', 'Code', 'Registered At'], $delimiter);
 
-            Member::orderBy('id')->chunk(200, function ($members) use ($handle) {
+            $this->membersQuery($sortBy, $sortDir)->chunk(200, function ($members) use ($handle, $delimiter) {
                 foreach ($members as $member) {
                     fputcsv($handle, [
                         $member->id,
@@ -128,7 +185,7 @@ class AdminController extends Controller
                         $member->role,
                         $member->unique_code,
                         $member->created_at,
-                    ]);
+                    ], $delimiter);
                 }
             });
 
@@ -136,7 +193,7 @@ class AdminController extends Controller
         };
 
         return response()->streamDownload($callback, $fileName, [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => $contentType,
         ]);
     }
 
@@ -232,5 +289,37 @@ class AdminController extends Controller
         return response()->streamDownload($callback, $fileName, [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    protected function membersQuery(string $sortBy, string $sortDir): Builder
+    {
+        return Member::query()->orderBy($sortBy, $sortDir);
+    }
+
+    protected function resolveMemberSort(Request $request): array
+    {
+        $sortOptions = $this->memberSortOptions();
+        $sortBy = (string) $request->query('sort_by', 'created_at');
+        if (! array_key_exists($sortBy, $sortOptions)) {
+            $sortBy = 'created_at';
+        }
+
+        $sortDir = Str::lower((string) $request->query('sort_dir', 'desc'));
+        if (! in_array($sortDir, ['asc', 'desc'], true)) {
+            $sortDir = 'desc';
+        }
+
+        return [$sortBy, $sortDir];
+    }
+
+    protected function memberSortOptions(): array
+    {
+        return [
+            'created_at' => 'Registration Date',
+            'full_name' => 'Name',
+            'unique_code' => 'Code',
+            'email' => 'Email',
+            'organization' => 'Place of Practice (Institution)',
+        ];
     }
 }
