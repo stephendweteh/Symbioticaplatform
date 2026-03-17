@@ -79,6 +79,41 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-lg font-semibold text-slate-900 mb-4">App Branding</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-semibold text-slate-700">Label</th>
+                                <th class="px-3 py-2 text-left font-semibold text-slate-700">Value</th>
+                                <th class="px-3 py-2 text-left font-semibold text-slate-700">Active</th>
+                                <th class="px-3 py-2 text-right font-semibold text-slate-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            @forelse(($settings['app_branding'] ?? collect()) as $setting)
+                                <tr>
+                                    <td class="px-3 py-2 font-medium text-slate-900">{{ $setting->label }}</td>
+                                    <td class="px-3 py-2 text-slate-600">{{ \Illuminate\Support\Str::limit($setting->setting_value, 80) }}</td>
+                                    <td class="px-3 py-2">{{ $setting->is_active ? 'Yes' : 'No' }}</td>
+                                    <td class="px-3 py-2 text-right">
+                                        <a href="{{ route('settings.edit', $setting) }}"
+                                           class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-slate-700 py-1 px-3 text-xs font-medium hover:bg-slate-50">
+                                            Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-3 py-4 text-center text-slate-500">No app branding settings found.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6">
                 <h2 class="text-lg font-semibold text-slate-900 mb-4">Email Content</h2>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 text-sm">

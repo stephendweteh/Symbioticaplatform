@@ -141,7 +141,7 @@ class AdminSettingController extends Controller
     protected function validateSetting(Request $request, ?AppSetting $existingSetting = null): array
     {
         $validated = $request->validate([
-            'category' => ['required', 'in:email_content,smtp_connection,sms_connection'],
+            'category' => ['required', 'in:app_branding,email_content,smtp_connection,sms_connection'],
             'label' => ['required', 'string', 'max:255'],
             'setting_key' => [
                 'required',
@@ -159,8 +159,9 @@ class AdminSettingController extends Controller
         $settingKey = Str::snake($validated['setting_key']);
         $settingValue = $validated['setting_value'] ?? null;
 
-        if ($settingKey === 'email_logo_url' && $request->hasFile('logo_file')) {
-            $uploadDir = public_path('uploads/email-logos');
+        if (in_array($settingKey, ['email_logo_url', 'app_logo_url'], true) && $request->hasFile('logo_file')) {
+            $relativeDir = $settingKey === 'app_logo_url' ? 'uploads/app-logos' : 'uploads/email-logos';
+            $uploadDir = public_path($relativeDir);
             if (! is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
@@ -168,9 +169,9 @@ class AdminSettingController extends Controller
             $uploaded = $request->file('logo_file');
             $fileName = Str::uuid()->toString() . '.' . $uploaded->getClientOriginalExtension();
             $uploaded->move($uploadDir, $fileName);
-            $settingValue = 'uploads/email-logos/' . $fileName;
+            $settingValue = $relativeDir . '/' . $fileName;
 
-            if ($existingSetting && str_starts_with((string) $existingSetting->setting_value, 'uploads/email-logos/')) {
+            if ($existingSetting && str_starts_with((string) $existingSetting->setting_value, $relativeDir . '/')) {
                 $oldPath = public_path((string) $existingSetting->setting_value);
                 if (is_file($oldPath)) {
                     @unlink($oldPath);

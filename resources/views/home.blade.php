@@ -12,11 +12,28 @@
     @endif
 </head>
 <body class="min-h-screen flex items-center justify-center bg-[#efefef]">
+    @php
+        $resolvedLogoSrc = $appLogoSrc ?? null;
+        if (!$resolvedLogoSrc) {
+            $logoSetting = \App\Models\AppSetting::query()
+                ->where('setting_key', 'app_logo_url')
+                ->where('is_active', true)
+                ->value('setting_value');
+
+            if ($logoSetting && (str_starts_with($logoSetting, 'http://') || str_starts_with($logoSetting, 'https://'))) {
+                $resolvedLogoSrc = $logoSetting;
+            } elseif ($logoSetting) {
+                $resolvedLogoSrc = asset(ltrim($logoSetting, '/'));
+            } else {
+                $resolvedLogoSrc = asset('logonew.png');
+            }
+        }
+    @endphp
     <div class="max-w-5xl w-full px-6 py-10">
         <div class="text-center">
             <div class="flex justify-center mb-10">
                 <img
-                    src="{{ asset('logonew.png') }}"
+                    src="{{ $resolvedLogoSrc }}"
                     alt="Symbiotica Logo"
                     class="h-[150px] w-auto"
                 >

@@ -4,6 +4,7 @@
         @php $selectedCategory = old('category', $setting?->category ?? 'email_content'); @endphp
         <select name="category"
                 class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">
+            <option value="app_branding" @selected($selectedCategory === 'app_branding')>App Branding</option>
             <option value="email_content" @selected($selectedCategory === 'email_content')>Email Content</option>
             <option value="smtp_connection" @selected($selectedCategory === 'smtp_connection')>SMTP Connection</option>
             <option value="sms_connection" @selected($selectedCategory === 'sms_connection')>SMS Connection</option>
@@ -43,7 +44,7 @@
 
 @php
     $currentKey = old('setting_key', $setting?->setting_key);
-    $isLogoSetting = $currentKey === 'email_logo_url';
+    $isLogoSetting = in_array($currentKey, ['email_logo_url', 'app_logo_url'], true);
 @endphp
 
 <div>
@@ -59,7 +60,7 @@
         <input type="file" name="logo_file" accept=".jpg,.jpeg,.png,.webp,.gif"
                class="mt-1 block w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-violet-100 file:text-violet-700 hover:file:bg-violet-200">
         <input type="hidden" name="setting_value" value="{{ old('setting_value', $setting?->setting_value) }}">
-        <p class="mt-1 text-xs text-slate-500">Upload a logo image (max 5MB). This will be used in registration emails.</p>
+        <p class="mt-1 text-xs text-slate-500">Upload a logo image (max 5MB).</p>
         @error('logo_file')
             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
         @enderror

@@ -11,8 +11,24 @@ use App\Http\Controllers\AdminRegistrationFieldController;
 use App\Http\Controllers\AdminSurveyFieldController;
 use App\Http\Controllers\AdminSettingController;
 use App\Http\Controllers\AdminUserController;
+use App\Models\AppSetting;
 
-Route::view('/', 'home')->name('home');
+Route::get('/', function () {
+    $logoSetting = AppSetting::query()
+        ->where('setting_key', 'app_logo_url')
+        ->where('is_active', true)
+        ->value('setting_value');
+
+    if ($logoSetting && (str_starts_with($logoSetting, 'http://') || str_starts_with($logoSetting, 'https://'))) {
+        $appLogoSrc = $logoSetting;
+    } elseif ($logoSetting) {
+        $appLogoSrc = asset(ltrim($logoSetting, '/'));
+    } else {
+        $appLogoSrc = asset('logonew.png');
+    }
+
+    return view('home', compact('appLogoSrc'));
+})->name('home');
 
 // Alias default auth "login" route to admin login so auth:admin middleware can redirect correctly.
 Route::get('/login', function () {
