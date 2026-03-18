@@ -44,9 +44,6 @@
                         </div>
                         <div class="p-4">
                             <h2 class="text-base font-semibold text-slate-900">{{ $slideSet->title }}</h2>
-                            <p class="text-xs text-slate-500 mt-1">
-                                {{ $slideSet->active_slides_count }} slide(s)
-                            </p>
                             @if($slideSet->description)
                                 <p class="text-sm text-slate-600 mt-3">{{ \Illuminate\Support\Str::limit($slideSet->description, 110) }}</p>
                             @endif
