@@ -41,9 +41,12 @@
         </div>
 
         <div class="space-y-4">
-            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 h-[900px] max-h-[90vh] flex items-center justify-center"
+            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 h-[900px] max-h-[90vh] flex items-center justify-center touch-pan-y select-none"
                  @touchstart.passive="touchStart($event)"
-                 @touchend.passive="touchEnd($event)">
+                 @touchend.passive="touchEnd($event)"
+                 @mousedown="pointerStart($event)"
+                 @mouseup="pointerEnd($event)"
+                 @mouseleave="pointerCancel()">
                 @if($slides->isEmpty())
                     <p class="text-slate-500 text-center px-4">
                         No slides configured yet. Please ask an admin to add slides.
@@ -146,6 +149,8 @@
             showCompletionActions: false,
             touchXStart: 0,
             touchXEnd: 0,
+            pointerXStart: 0,
+            pointerActive: false,
             async update(endedEarly = false) {
                 try {
                     const response = await fetch('{{ route('engagement.progress') }}', {
@@ -218,9 +223,27 @@
                 this.touchXEnd = event.changedTouches[0].screenX;
                 const swipeDistance = this.touchXEnd - this.touchXStart;
 
-                if (swipeDistance <= -50) {
+                this.handleSwipeDistance(swipeDistance);
+            },
+            pointerStart(event) {
+                this.pointerActive = true;
+                this.pointerXStart = event.screenX;
+            },
+            pointerEnd(event) {
+                if (!this.pointerActive) return;
+                this.pointerActive = false;
+                const swipeDistance = event.screenX - this.pointerXStart;
+                this.handleSwipeDistance(swipeDistance);
+            },
+            pointerCancel() {
+                this.pointerActive = false;
+            },
+            handleSwipeDistance(swipeDistance) {
+                const threshold = 50;
+
+                if (swipeDistance <= -threshold) {
                     this.next();
-                } else if (swipeDistance >= 50) {
+                } else if (swipeDistance >= threshold) {
                     this.prev();
                 }
             },
