@@ -5,12 +5,25 @@
 
 @section('content')
 <div class="min-h-screen flex items-center justify-center">
-    <div x-data="engagementSlider({{ $member->id }}, {{ $slides->count() }}, @js($nextSet?->id), @js(route('engagement.sets', $member)), @js($nextSet ? route('engagement.start-set', ['member' => $member->id, 'slideSet' => $nextSet->id]) : null))"
+    <div x-data="engagementSlider({{ $member->id }}, {{ $slides->count() }}, @js($subcategorySelectionUrl ?? route('engagement.sets', $member)), @js($experienceSelectionUrl ?? route('engagement.sets', $member)), @js(isset($nextSubcategory) ? route('engagement.start-subcategory', ['member' => $member->id, 'slideSet' => $slideSet->id, 'slideSubcategory' => $nextSubcategory->id]) : null))"
          class="max-w-[1200px] w-full bg-white rounded-2xl shadow-xl p-8 mx-4">
         <div class="flex justify-between items-center mb-4 text-sm text-slate-600">
             <div>
+                <div class="mb-2">
+                    <a href="{{ $subcategorySelectionUrl ?? route('engagement.sets', $member) }}"
+                       class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                       title="Back to Sub Categories"
+                       aria-label="Back to Sub Categories">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M17 10a1 1 0 0 1-1 1H6.414l3.293 3.293a1 1 0 0 1-1.414 1.414l-5-5a1 1 0 0 1 0-1.414l5-5a1 1 0 0 1 1.414 1.414L6.414 9H16a1 1 0 0 1 1 1Z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                </div>
                 @if(isset($slideSet))
                     <p class="text-xs uppercase tracking-wide text-violet-700 font-semibold">{{ $slideSet->title }}</p>
+                @endif
+                @if(isset($slideSubcategory))
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-semibold">{{ $slideSubcategory->title }}</p>
                 @endif
                 <p class="font-semibold text-slate-900">{{ $member->full_name }}</p>
                 <p>Code: <span class="font-mono">{{ $member->unique_code }}</span></p>
@@ -92,13 +105,18 @@
                 </p>
                 <div class="flex flex-wrap items-center gap-3">
                     <button type="button"
-                            @click="goToNextSet"
-                            x-show="nextSetId"
+                            @click="goToNextSubcategory"
+                            x-show="nextSubcategoryUrl"
                             class="inline-flex items-center justify-center rounded-xl border border-violet-500 bg-violet-500 text-white py-2 px-4 text-sm font-medium shadow-sm hover:bg-violet-600 hover:border-violet-600">
-                        View Next Experience
+                        View Next Sub Category
                     </button>
                     <button type="button"
-                            @click="goToSetSelection"
+                            @click="goToSubcategorySelection"
+                            class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 py-2 px-4 text-sm font-medium shadow-sm hover:bg-slate-50">
+                        Choose Another Sub Category
+                    </button>
+                    <button type="button"
+                            @click="goToExperienceSelection"
                             class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 py-2 px-4 text-sm font-medium shadow-sm hover:bg-slate-50">
                         Choose Another Experience
                     </button>
@@ -117,13 +135,13 @@
 @push('scripts')
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script>
-    function engagementSlider(memberId, totalSlides, nextSetId, setSelectionUrl, nextSetUrl) {
+    function engagementSlider(memberId, totalSlides, subcategorySelectionUrl, experienceSelectionUrl, nextSubcategoryUrl) {
         return {
             memberId,
             totalSlides,
-            nextSetId,
-            setSelectionUrl,
-            nextSetUrl,
+            subcategorySelectionUrl,
+            experienceSelectionUrl,
+            nextSubcategoryUrl,
             currentIndex: 0,
             showCompletionActions: false,
             touchXStart: 0,
@@ -180,14 +198,17 @@
                 await this.update(true);
                 window.location.href = '{{ route('home') }}';
             },
-            goToSetSelection() {
-                window.location.href = this.setSelectionUrl;
+            goToSubcategorySelection() {
+                window.location.href = this.subcategorySelectionUrl;
             },
-            goToNextSet() {
-                if (this.nextSetUrl) {
-                    window.location.href = this.nextSetUrl;
+            goToExperienceSelection() {
+                window.location.href = this.experienceSelectionUrl;
+            },
+            goToNextSubcategory() {
+                if (this.nextSubcategoryUrl) {
+                    window.location.href = this.nextSubcategoryUrl;
                 } else {
-                    this.goToSetSelection();
+                    this.goToSubcategorySelection();
                 }
             },
             touchStart(event) {

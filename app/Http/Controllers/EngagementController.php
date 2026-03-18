@@ -6,6 +6,7 @@ use App\Models\Engagement;
 use App\Models\Member;
 use App\Models\Slide;
 use App\Models\SlideSet;
+use App\Models\SlideSubcategory;
 use Illuminate\Http\Request;
 
 class EngagementController extends Controller
@@ -37,7 +38,7 @@ class EngagementController extends Controller
         return $this->renderSetSelection($member);
     }
 
-    public function startSet(Member $member, SlideSet $slideSet)
+    public function showSubcategories(Member $member, SlideSet $slideSet)
     {
         if (! $slideSet->is_active) {
             return redirect()
@@ -45,21 +46,55 @@ class EngagementController extends Controller
                 ->withErrors(['slide_set' => 'Selected experience is inactive.']);
         }
 
+        $subcategories = SlideSubcategory::query()
+            ->where('slide_set_id', $slideSet->id)
+            ->where('is_active', true)
+            ->whereHas('slides', fn ($query) => $query->where('is_active', true))
+            ->withCount([
+                'slides as active_slides_count' => fn ($query) => $query->where('is_active', true),
+            ])
+            ->orderBy('order_number')
+            ->orderBy('id')
+            ->get();
+
+        if ($subcategories->isEmpty()) {
+            return redirect()
+                ->route('engagement.sets', $member)
+                ->withErrors(['slide_set' => 'Selected experience has no active sub categories with slides.']);
+        }
+
+        return view('engagement.select-subcategory', [
+            'member' => $member,
+            'slideSet' => $slideSet,
+            'subcategories' => $subcategories,
+        ]);
+    }
+
+    public function startSubcategory(Member $member, SlideSet $slideSet, SlideSubcategory $slideSubcategory)
+    {
+        if ($slideSubcategory->slide_set_id !== $slideSet->id || ! $slideSubcategory->is_active) {
+            return redirect()
+                ->route('engagement.subcategories', [$member, $slideSet])
+                ->withErrors(['slide_set' => 'Selected sub category is invalid or inactive.']);
+        }
+
         $slides = Slide::query()
             ->where('slide_set_id', $slideSet->id)
+            ->where('slide_subcategory_id', $slideSubcategory->id)
             ->where('is_active', true)
             ->orderBy('order_number')
             ->get();
 
         if ($slides->isEmpty()) {
             return redirect()
-                ->route('engagement.sets', $member)
-                ->withErrors(['slide_set' => 'Selected experience has no active slides.']);
+                ->route('engagement.subcategories', [$member, $slideSet])
+                ->withErrors(['slide_set' => 'Selected sub category has no active slides.']);
         }
 
-        $nextSet = SlideSet::query()
+        $nextSubcategory = SlideSubcategory::query()
+            ->where('slide_set_id', $slideSet->id)
             ->where('is_active', true)
-            ->where('order_number', '>', $slideSet->order_number)
+            ->where('order_number', '>', $slideSubcategory->order_number)
             ->whereHas('slides', fn ($query) => $query->where('is_active', true))
             ->orderBy('order_number')
             ->orderBy('id')
@@ -81,7 +116,10 @@ class EngagementController extends Controller
             'engagement' => $engagement,
             'slides' => $slides,
             'slideSet' => $slideSet,
-            'nextSet' => $nextSet,
+            'slideSubcategory' => $slideSubcategory,
+            'nextSubcategory' => $nextSubcategory,
+            'subcategorySelectionUrl' => route('engagement.subcategories', [$member, $slideSet]),
+            'experienceSelectionUrl' => route('engagement.sets', $member),
         ]);
     }
 
@@ -153,7 +191,10 @@ class EngagementController extends Controller
     {
         $slideSets = SlideSet::query()
             ->where('is_active', true)
-            ->whereHas('slides', fn ($query) => $query->where('is_active', true))
+            ->whereHas('subcategories', function ($query) {
+                $query->where('is_active', true)
+                    ->whereHas('slides', fn ($slides) => $slides->where('is_active', true));
+            })
             ->withCount([
                 'slides as active_slides_count' => fn ($query) => $query->where('is_active', true),
             ])

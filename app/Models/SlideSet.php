@@ -19,5 +19,10 @@ class SlideSet extends Model
     {
         return $this->hasMany(Slide::class);
     }
+
+    public function subcategories(): HasMany
+    {
+        return $this->hasMany(SlideSubcategory::class);
+    }
 }
 

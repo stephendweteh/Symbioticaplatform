@@ -32,7 +32,7 @@
         @else
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 @foreach($slideSets as $slideSet)
-                    <a href="{{ route('engagement.start-set', ['member' => $member->id, 'slideSet' => $slideSet->id]) }}"
+                    <a href="{{ route('engagement.subcategories', ['member' => $member->id, 'slideSet' => $slideSet->id]) }}"
                        class="group rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-violet-300 transition overflow-hidden">
                         <div class="h-40 bg-slate-100 flex items-center justify-center overflow-hidden">
                             @if($slideSet->thumbnail_path)
@@ -50,9 +50,6 @@
                             @if($slideSet->description)
                                 <p class="text-sm text-slate-600 mt-3">{{ \Illuminate\Support\Str::limit($slideSet->description, 110) }}</p>
                             @endif
-                            <div class="mt-4 inline-flex items-center text-sm font-medium text-violet-700">
-                                View this experience
-                            </div>
                         </div>
                     </a>
                 @endforeach

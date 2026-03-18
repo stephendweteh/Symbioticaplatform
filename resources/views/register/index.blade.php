@@ -34,7 +34,6 @@
                         $inputName = $field->field_key;
                         $isGenderDefault = $field->field_key === 'gender' && empty($field->options);
                         $fieldOptions = $isGenderDefault ? ['male', 'female', 'other'] : ($field->options ?? []);
-                        $isPhoneField = in_array($field->field_key, ['phone', 'phone_number'], true);
                     @endphp
                     <div>
                         <label class="block text-sm font-medium text-slate-700">
@@ -57,7 +56,6 @@
                             </select>
                         @else
                             <input type="{{ $field->field_type }}" name="{{ $inputName }}" value="{{ old($inputName) }}"
-                                   @if($isPhoneField) placeholder="233XXXXXX" @endif
                                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">
                         @endif
 

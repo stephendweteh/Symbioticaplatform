@@ -36,6 +36,10 @@
                    class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-slate-700 py-2 px-3 text-sm font-medium hover:bg-slate-50">
                     Experiences
                 </a>
+                <a href="{{ route('slide-subcategories.index') }}"
+                   class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-slate-700 py-2 px-3 text-sm font-medium hover:bg-slate-50">
+                    Sub Categories
+                </a>
                 <a href="{{ route('slides.index') }}"
                    class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-slate-700 py-2 px-3 text-sm font-medium hover:bg-slate-50">
                     Slides

@@ -46,6 +46,12 @@ class SlideSetController extends Controller
 
     public function destroy(SlideSet $slideSet)
     {
+        if ($slideSet->subcategories()->exists()) {
+            return redirect()
+                ->route('slide-sets.index')
+                ->with('error', 'Cannot delete an experience that still contains sub categories.');
+        }
+
         if ($slideSet->slides()->exists()) {
             return redirect()
                 ->route('slide-sets.index')

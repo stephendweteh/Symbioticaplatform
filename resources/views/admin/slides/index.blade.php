@@ -8,12 +8,33 @@
     <div class="max-w-5xl mx-auto px-4">
         @include('admin.partials.topbar')
 
+        <div class="mb-4">
+            <a href="{{ route('admin.index') }}"
+               class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+               title="Back to Dashboard"
+               aria-label="Back to Dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M17 10a1 1 0 0 1-1 1H6.414l3.293 3.293a1 1 0 0 1-1.414 1.414l-5-5a1 1 0 0 1 0-1.414l5-5a1 1 0 0 1 1.414 1.414L6.414 9H16a1 1 0 0 1 1 1Z" clip-rule="evenodd" />
+                </svg>
+            </a>
+        </div>
+
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-semibold text-slate-900">Slides</h1>
-            <a href="{{ route('slides.create') }}"
-               class="inline-flex items-center rounded-xl border border-violet-500 bg-violet-500 text-white py-2 px-4 text-sm font-medium shadow-sm hover:bg-violet-600 hover:border-violet-600 transition">
-                Add Slide
-            </a>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('slide-sets.index') }}"
+                   class="inline-flex items-center rounded-xl border border-slate-300 bg-white text-slate-700 py-2 px-4 text-sm font-medium shadow-sm hover:bg-slate-50 transition">
+                    View Experiences
+                </a>
+                <a href="{{ route('slide-subcategories.index') }}"
+                   class="inline-flex items-center rounded-xl border border-slate-300 bg-white text-slate-700 py-2 px-4 text-sm font-medium shadow-sm hover:bg-slate-50 transition">
+                    View Sub Categories
+                </a>
+                <a href="{{ route('slides.create') }}"
+                   class="inline-flex items-center rounded-xl border border-violet-500 bg-violet-500 text-white py-2 px-4 text-sm font-medium shadow-sm hover:bg-violet-600 hover:border-violet-600 transition">
+                    Add Slide
+                </a>
+            </div>
         </div>
 
         @if (session('success'))
@@ -28,7 +49,8 @@
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Order</th>
-                            <th class="px-3 py-2 text-left font-semibold text-slate-700">Set</th>
+                            <th class="px-3 py-2 text-left font-semibold text-slate-700">Experience</th>
+                            <th class="px-3 py-2 text-left font-semibold text-slate-700">Sub Category</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Title</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Preview</th>
                             <th class="px-3 py-2 text-left font-semibold text-slate-700">Image Path</th>
@@ -41,6 +63,7 @@
                             <tr>
                                 <td class="px-3 py-2 text-sm text-slate-700">{{ $slide->order_number }}</td>
                                 <td class="px-3 py-2 text-sm text-slate-700">{{ $slide->slideSet?->title ?? 'Unassigned' }}</td>
+                                <td class="px-3 py-2 text-sm text-slate-700">{{ $slide->slideSubcategory?->title ?? 'Unassigned' }}</td>
                                 <td class="px-3 py-2 text-sm text-slate-900">{{ $slide->title }}</td>
                                 <td class="px-3 py-2">
                                     @if($slide->image_path)
@@ -80,7 +103,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-3 py-4 text-center text-sm text-slate-500">
+                                <td colspan="8" class="px-3 py-4 text-center text-sm text-slate-500">
                                     No slides yet.
                                 </td>
                             </tr>

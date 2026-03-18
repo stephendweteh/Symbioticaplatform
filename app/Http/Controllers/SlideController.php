@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Slide;
-use App\Models\SlideSet;
+use App\Models\SlideSubcategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -14,7 +14,7 @@ class SlideController extends Controller
      */
     public function index()
     {
-        $slides = Slide::with('slideSet')
+        $slides = Slide::with(['slideSet', 'slideSubcategory'])
             ->orderBy('order_number')
             ->paginate(20);
 
@@ -26,9 +26,13 @@ class SlideController extends Controller
      */
     public function create()
     {
-        $slideSets = SlideSet::orderBy('order_number')->orderBy('id')->get();
+        $subcategories = SlideSubcategory::with('slideSet')
+            ->where('is_active', true)
+            ->orderBy('order_number')
+            ->orderBy('id')
+            ->get();
 
-        return view('admin.slides.create', compact('slideSets'));
+        return view('admin.slides.create', compact('subcategories'));
     }
 
     /**
@@ -37,7 +41,7 @@ class SlideController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'slide_set_id' => ['required', 'integer', 'exists:slide_sets,id'],
+            'slide_subcategory_id' => ['required', 'integer', 'exists:slide_subcategories,id'],
             'title' => ['required', 'string', 'max:255'],
             'image_file' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
             'description' => ['nullable', 'string'],
@@ -45,6 +49,8 @@ class SlideController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
+        $subcategory = SlideSubcategory::findOrFail($data['slide_subcategory_id']);
+        $data['slide_set_id'] = $subcategory->slide_set_id;
         $data['is_active'] = $request->boolean('is_active');
         $data['image_path'] = $this->storeSlideImage($request);
         unset($data['image_file']);
@@ -67,9 +73,14 @@ class SlideController extends Controller
      */
     public function edit(Slide $slide)
     {
-        $slideSets = SlideSet::orderBy('order_number')->orderBy('id')->get();
+        $subcategories = SlideSubcategory::with('slideSet')
+            ->where('is_active', true)
+            ->orWhere('id', $slide->slide_subcategory_id)
+            ->orderBy('order_number')
+            ->orderBy('id')
+            ->get();
 
-        return view('admin.slides.edit', compact('slide', 'slideSets'));
+        return view('admin.slides.edit', compact('slide', 'subcategories'));
     }
 
     /**
@@ -78,7 +89,7 @@ class SlideController extends Controller
     public function update(Request $request, Slide $slide)
     {
         $data = $request->validate([
-            'slide_set_id' => ['required', 'integer', 'exists:slide_sets,id'],
+            'slide_subcategory_id' => ['required', 'integer', 'exists:slide_subcategories,id'],
             'title' => ['required', 'string', 'max:255'],
             'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
             'description' => ['nullable', 'string'],
@@ -86,6 +97,8 @@ class SlideController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
+        $subcategory = SlideSubcategory::findOrFail($data['slide_subcategory_id']);
+        $data['slide_set_id'] = $subcategory->slide_set_id;
         $data['is_active'] = $request->boolean('is_active');
         if ($request->hasFile('image_file')) {
             if ($slide->image_path && is_file(public_path($slide->image_path))) {

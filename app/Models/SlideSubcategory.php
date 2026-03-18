@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Slide extends Model
+class SlideSubcategory extends Model
 {
     protected $fillable = [
         'slide_set_id',
-        'slide_subcategory_id',
         'title',
-        'image_path',
         'description',
+        'thumbnail_path',
         'order_number',
         'is_active',
     ];
@@ -22,8 +22,9 @@ class Slide extends Model
         return $this->belongsTo(SlideSet::class);
     }
 
-    public function slideSubcategory(): BelongsTo
+    public function slides(): HasMany
     {
-        return $this->belongsTo(SlideSubcategory::class, 'slide_subcategory_id');
+        return $this->hasMany(Slide::class, 'slide_subcategory_id');
     }
 }
+
