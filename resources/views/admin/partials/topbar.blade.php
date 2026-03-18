@@ -61,6 +61,10 @@
                     Users
                 </a>
             @endif
+            <a href="{{ route('admin.surveys.index') }}"
+               class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-slate-700 py-2 px-3 text-sm font-medium hover:bg-slate-50">
+                Survey
+            </a>
             <a href="{{ route('admin.profile') }}"
                class="inline-flex items-center rounded-lg border border-violet-500 bg-violet-500 text-white py-2 px-3 text-sm font-medium hover:bg-violet-600">
                 Profile

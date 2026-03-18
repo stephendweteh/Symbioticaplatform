@@ -6,6 +6,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Engagement;
 use App\Models\Member;
 use App\Models\Survey;
+use App\Models\SurveyField;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -38,6 +39,39 @@ class AdminController extends Controller
         $sortOptions = $this->memberSortOptions();
 
         return view('admin.index', compact('members', 'stats', 'sortBy', 'sortDir', 'sortOptions'));
+    }
+
+    public function surveys(Request $request)
+    {
+        $admin = Auth::guard('admin')->user();
+        $isSuperAdmin = $admin?->role === 'super_admin';
+        [$sortBy, $sortDir] = $this->resolveSurveySort($request);
+
+        $surveyFields = SurveyField::query()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        $surveys = $this->surveysQuery($sortBy, $sortDir)
+            ->paginate(20)
+            ->appends([
+                'sort_by' => $sortBy,
+                'sort_dir' => $sortDir,
+            ]);
+
+        $surveySortOptions = $this->surveySortOptions();
+
+        return view('admin.surveys.index', compact('surveys', 'surveyFields', 'sortBy', 'sortDir', 'surveySortOptions', 'isSuperAdmin'));
+    }
+
+    public function destroySurvey(Survey $survey)
+    {
+        $this->ensureSuperAdmin();
+        $survey->delete();
+
+        return redirect()
+            ->route('admin.surveys.index')
+            ->with('success', 'Survey submission deleted successfully.');
     }
 
     public function profile()
@@ -251,17 +285,40 @@ class AdminController extends Controller
         ]);
     }
 
-    public function exportSurveys(): StreamedResponse
+    public function exportSurveys(Request $request)
     {
-        $fileName = 'surveys.csv';
+        [$sortBy, $sortDir] = $this->resolveSurveySort($request);
+        $format = Str::lower((string) $request->query('format', 'csv'));
+        if (! in_array($format, ['csv', 'xls', 'pdf'], true)) {
+            $format = 'csv';
+        }
 
-        $callback = function () {
+        $rows = $this->surveysQuery($sortBy, $sortDir)->get();
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('admin.exports.surveys-pdf', [
+                'rows' => $rows,
+                'sortBy' => $sortBy,
+                'sortDir' => $sortDir,
+                'generatedAt' => now(),
+            ])->setPaper('a4', 'landscape');
+
+            return $pdf->download('surveys.pdf');
+        }
+
+        $delimiter = $format === 'xls' ? "\t" : ',';
+        $fileName = 'surveys.' . $format;
+        $contentType = $format === 'xls'
+            ? 'application/vnd.ms-excel'
+            : 'text/csv';
+
+        $callback = function () use ($sortBy, $sortDir, $delimiter) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, [
                 'ID',
                 'Member ID',
                 'Member Name',
                 'Code',
+                'Member Email',
                 'Q1',
                 'Q2',
                 'Q3',
@@ -270,15 +327,16 @@ class AdminController extends Controller
                 'Comments',
                 'Additional Data',
                 'Submitted At',
-            ]);
+            ], $delimiter);
 
-            Survey::with('member')->orderBy('id')->chunk(200, function ($rows) use ($handle) {
+            $this->surveysQuery($sortBy, $sortDir)->chunk(200, function ($rows) use ($handle, $delimiter) {
                 foreach ($rows as $survey) {
                     fputcsv($handle, [
                         $survey->id,
                         $survey->member_id,
                         optional($survey->member)->full_name,
                         optional($survey->member)->unique_code,
+                        optional($survey->member)->email,
                         $survey->question_1,
                         $survey->question_2,
                         $survey->question_3,
@@ -287,7 +345,7 @@ class AdminController extends Controller
                         $survey->comments,
                         $survey->additional_data ? json_encode($survey->additional_data) : null,
                         $survey->created_at,
-                    ]);
+                    ], $delimiter);
                 }
             });
 
@@ -295,7 +353,7 @@ class AdminController extends Controller
         };
 
         return response()->streamDownload($callback, $fileName, [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => $contentType,
         ]);
     }
 
@@ -330,5 +388,59 @@ class AdminController extends Controller
             'county' => 'County',
             'organization' => 'Place of Practice (Institution)',
         ];
+    }
+
+    protected function surveysQuery(string $sortBy, string $sortDir): Builder
+    {
+        $query = Survey::query()->with('member');
+
+        if (in_array($sortBy, ['member_name', 'member_code'], true)) {
+            $query->leftJoin('members', 'members.id', '=', 'surveys.member_id')
+                ->select('surveys.*');
+
+            if ($sortBy === 'member_name') {
+                $query->orderBy('members.full_name', $sortDir);
+            } else {
+                $query->orderBy('members.unique_code', $sortDir);
+            }
+
+            return $query->orderBy('surveys.id', 'desc');
+        }
+
+        return $query->orderBy('surveys.' . $sortBy, $sortDir);
+    }
+
+    protected function resolveSurveySort(Request $request): array
+    {
+        $sortOptions = $this->surveySortOptions();
+        $sortBy = (string) $request->query('sort_by', 'created_at');
+        if (! array_key_exists($sortBy, $sortOptions)) {
+            $sortBy = 'created_at';
+        }
+
+        $sortDir = Str::lower((string) $request->query('sort_dir', 'desc'));
+        if (! in_array($sortDir, ['asc', 'desc'], true)) {
+            $sortDir = 'desc';
+        }
+
+        return [$sortBy, $sortDir];
+    }
+
+    protected function surveySortOptions(): array
+    {
+        return [
+            'created_at' => 'Submission Date',
+            'id' => 'Submission ID',
+            'member_name' => 'Member Name',
+            'member_code' => 'Member Code',
+        ];
+    }
+
+    protected function ensureSuperAdmin(): void
+    {
+        $admin = Auth::guard('admin')->user();
+        if (! $admin || $admin->role !== 'super_admin') {
+            abort(403);
+        }
     }
 }
