@@ -72,14 +72,33 @@ class EngagementController extends Controller
 
     public function startSubcategory(Member $member, SlideSet $slideSet, SlideSubcategory $slideSubcategory)
     {
-        if ($slideSubcategory->slide_set_id !== $slideSet->id || ! $slideSubcategory->is_active) {
+        $resolvedSlideSet = $slideSubcategory->slideSet ?: $slideSet;
+
+        if (! $slideSubcategory->is_active) {
+            // Recover from inactive links by redirecting to the first valid
+            // active subcategory under the resolved experience.
+            $fallbackSubcategory = SlideSubcategory::query()
+                ->where('slide_set_id', $resolvedSlideSet->id)
+                ->where('is_active', true)
+                ->whereHas('slides', fn ($query) => $query->where('is_active', true))
+                ->orderBy('order_number')
+                ->orderBy('id')
+                ->first();
+
+            if ($fallbackSubcategory) {
+                return redirect()->route('engagement.start-subcategory', [
+                    'member' => $member->id,
+                    'slideSet' => $resolvedSlideSet->id,
+                    'slideSubcategory' => $fallbackSubcategory->id,
+                ]);
+            }
+
             return redirect()
-                ->route('engagement.subcategories', [$member, $slideSet])
-                ->withErrors(['slide_set' => 'Selected sub category is invalid or inactive.']);
+                ->route('engagement.subcategories', [$member, $resolvedSlideSet])
+                ->withErrors(['slide_set' => 'No active sub category is currently available for this experience.']);
         }
 
         $slides = Slide::query()
-            ->where('slide_set_id', $slideSet->id)
             ->where('slide_subcategory_id', $slideSubcategory->id)
             ->where('is_active', true)
             ->orderBy('order_number')
@@ -87,12 +106,12 @@ class EngagementController extends Controller
 
         if ($slides->isEmpty()) {
             return redirect()
-                ->route('engagement.subcategories', [$member, $slideSet])
+                ->route('engagement.subcategories', [$member, $resolvedSlideSet])
                 ->withErrors(['slide_set' => 'Selected sub category has no active slides.']);
         }
 
         $nextSubcategory = SlideSubcategory::query()
-            ->where('slide_set_id', $slideSet->id)
+            ->where('slide_set_id', $resolvedSlideSet->id)
             ->where('is_active', true)
             ->where('order_number', '>', $slideSubcategory->order_number)
             ->whereHas('slides', fn ($query) => $query->where('is_active', true))
@@ -115,10 +134,10 @@ class EngagementController extends Controller
             'member' => $member,
             'engagement' => $engagement,
             'slides' => $slides,
-            'slideSet' => $slideSet,
+            'slideSet' => $resolvedSlideSet,
             'slideSubcategory' => $slideSubcategory,
             'nextSubcategory' => $nextSubcategory,
-            'subcategorySelectionUrl' => route('engagement.subcategories', [$member, $slideSet]),
+            'subcategorySelectionUrl' => route('engagement.subcategories', [$member, $resolvedSlideSet]),
             'experienceSelectionUrl' => route('engagement.sets', $member),
         ]);
     }

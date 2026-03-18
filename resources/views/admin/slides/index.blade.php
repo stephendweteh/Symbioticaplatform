@@ -62,7 +62,7 @@
                         @forelse($slides as $slide)
                             <tr>
                                 <td class="px-3 py-2 text-sm text-slate-700">{{ $slide->order_number }}</td>
-                                <td class="px-3 py-2 text-sm text-slate-700">{{ $slide->slideSet?->title ?? 'Unassigned' }}</td>
+                                <td class="px-3 py-2 text-sm text-slate-700">{{ $slide->slideSubcategory?->slideSet?->title ?? 'Unassigned' }}</td>
                                 <td class="px-3 py-2 text-sm text-slate-700">{{ $slide->slideSubcategory?->title ?? 'Unassigned' }}</td>
                                 <td class="px-3 py-2 text-sm text-slate-900">{{ $slide->title }}</td>
                                 <td class="px-3 py-2">

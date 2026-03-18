@@ -14,7 +14,7 @@ class SlideController extends Controller
      */
     public function index()
     {
-        $slides = Slide::with(['slideSet', 'slideSubcategory'])
+        $slides = Slide::with(['slideSubcategory.slideSet'])
             ->orderBy('order_number')
             ->paginate(20);
 
@@ -49,8 +49,7 @@ class SlideController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
-        $subcategory = SlideSubcategory::findOrFail($data['slide_subcategory_id']);
-        $data['slide_set_id'] = $subcategory->slide_set_id;
+        $data['slide_set_id'] = null;
         $data['is_active'] = $request->boolean('is_active');
         $data['image_path'] = $this->storeSlideImage($request);
         unset($data['image_file']);
@@ -97,8 +96,7 @@ class SlideController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
-        $subcategory = SlideSubcategory::findOrFail($data['slide_subcategory_id']);
-        $data['slide_set_id'] = $subcategory->slide_set_id;
+        $data['slide_set_id'] = null;
         $data['is_active'] = $request->boolean('is_active');
         if ($request->hasFile('image_file')) {
             if ($slide->image_path && is_file(public_path($slide->image_path))) {
