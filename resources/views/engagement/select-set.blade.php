@@ -4,9 +4,9 @@
 @section('body_class', 'min-h-screen bg-gradient-to-b from-violet-500 to-white py-10')
 
 @section('content')
-<div class="min-h-screen flex items-center justify-center">
-    <div class="max-w-6xl w-full bg-white rounded-2xl shadow-xl p-8 mx-4">
-        <div class="flex items-start justify-between gap-4 mb-6">
+<div class="min-h-screen flex items-center justify-center px-4 sm:px-6">
+    <div class="w-full max-w-6xl rounded-2xl bg-white p-5 shadow-xl sm:p-7 lg:p-8">
+        <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-slate-900">Choose an Experience</h1>
                 <p class="text-sm text-slate-500 mt-1">
@@ -30,11 +30,11 @@
                 No active experiences are available yet. Please contact an admin.
             </div>
         @else
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach($slideSets as $slideSet)
                     <a href="{{ route('engagement.subcategories', ['member' => $member->id, 'slideSet' => $slideSet->id]) }}"
-                       class="group rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-violet-300 transition overflow-hidden">
-                        <div class="h-40 bg-slate-100 flex items-center justify-center overflow-hidden">
+                       class="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md">
+                        <div class="h-44 bg-slate-100 flex items-center justify-center overflow-hidden">
                             @if($slideSet->thumbnail_path)
                                 <img src="{{ asset($slideSet->thumbnail_path) }}" alt="{{ $slideSet->title }}"
                                      class="w-full h-full object-cover group-hover:scale-[1.02] transition">
@@ -42,7 +42,7 @@
                                 <div class="text-slate-400 text-sm">No thumbnail</div>
                             @endif
                         </div>
-                        <div class="p-4">
+                        <div class="flex flex-1 flex-col p-4">
                             <h2 class="text-base font-semibold text-slate-900">{{ $slideSet->title }}</h2>
                             @if($slideSet->description)
                                 <p class="text-sm text-slate-600 mt-3">{{ \Illuminate\Support\Str::limit($slideSet->description, 110) }}</p>
