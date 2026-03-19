@@ -22,7 +22,7 @@
         <select name="field_type"
                 class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">
             @php $selectedType = old('field_type', $field?->field_type ?? 'text'); @endphp
-            @foreach(['text','email','tel','number','date','textarea','select'] as $type)
+            @foreach(['text','email','tel','number','date','textarea','select','consent'] as $type)
                 <option value="{{ $type }}" @selected($selectedType === $type)>{{ ucfirst($type) }}</option>
             @endforeach
         </select>
@@ -41,7 +41,12 @@
 </div>
 
 <div>
-    <label class="block text-sm font-medium text-slate-700">Options (one per line, for Select type)</label>
+    <label class="block text-sm font-medium text-slate-700">
+        Options
+        <span class="text-xs text-slate-500">
+            (for Select: one per line; for Consent: full consent text)
+        </span>
+    </label>
     <textarea name="options_input" rows="4"
               class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">{{ old('options_input', isset($field) && $field?->options ? implode("\n", $field->options) : '') }}</textarea>
     @error('options_input')

@@ -36,14 +36,37 @@
                         $fieldOptions = $isGenderDefault ? ['male', 'female', 'other'] : ($field->options ?? []);
                     @endphp
                     <div>
-                        <label class="block text-sm font-medium text-slate-700">
-                            {{ $field->label }}
-                            @if($field->is_required)
-                                <span class="text-red-600">*</span>
-                            @endif
-                        </label>
+                        @if($field->field_type !== 'consent')
+                            <label class="block text-sm font-medium text-slate-700">
+                                {{ $field->label }}
+                                @if($field->is_required)
+                                    <span class="text-red-600">*</span>
+                                @endif
+                            </label>
+                        @endif
 
-                        @if($field->field_type === 'textarea')
+                        @if($field->field_type === 'consent')
+                            @php
+                                $consentText = $field->options[0] ?? '';
+                            @endphp
+                            @if($consentText !== '')
+                                <textarea rows="4" readonly
+                                          class="mt-1 block w-full rounded-md border-slate-200 bg-slate-50 text-sm text-slate-800 shadow-sm">
+{{ $consentText }}
+                                </textarea>
+                            @endif
+                            <label class="mt-2 inline-flex items-start gap-2">
+                                <input type="checkbox" name="{{ $inputName }}" value="1"
+                                       class="mt-1 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                                       {{ old($inputName) ? 'checked' : '' }}>
+                                <span class="text-sm text-slate-700">
+                                    {{ $field->label }}
+                                    @if($field->is_required)
+                                        <span class="text-red-600">*</span>
+                                    @endif
+                                </span>
+                            </label>
+                        @elseif($field->field_type === 'textarea')
                             <textarea name="{{ $inputName }}" rows="3"
                                       class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-violet-500 focus:ring-violet-500">{{ old($inputName) }}</textarea>
                         @elseif($field->field_type === 'select')

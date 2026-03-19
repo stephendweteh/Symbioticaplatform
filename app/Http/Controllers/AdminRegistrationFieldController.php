@@ -89,7 +89,7 @@ class AdminRegistrationFieldController extends Controller
                 'regex:/^[a-z0-9_]+$/',
                 Rule::unique('registration_fields', 'field_key')->ignore($ignoreId),
             ],
-            'field_type' => ['required', 'in:text,email,tel,number,date,textarea,select'],
+            'field_type' => ['required', 'in:text,email,tel,number,date,textarea,select,consent'],
             'options_input' => ['nullable', 'string'],
             'sort_order' => ['required', 'integer', 'min:0'],
             'is_required' => ['nullable', 'boolean'],
@@ -100,6 +100,10 @@ class AdminRegistrationFieldController extends Controller
         if ($validated['field_type'] === 'select') {
             $rawOptions = preg_split('/\r\n|\r|\n/', (string) ($validated['options_input'] ?? ''));
             $options = array_values(array_filter(array_map(fn ($opt) => trim($opt), $rawOptions)));
+        } elseif ($validated['field_type'] === 'consent') {
+            // Store full consent text as a single option entry; label becomes checkbox label.
+            $text = trim((string) ($validated['options_input'] ?? ''));
+            $options = $text !== '' ? [$text] : null;
         }
 
         return [

@@ -42,6 +42,13 @@ class RegisterController extends Controller
             $key = $field->field_key;
             $rules = [$field->is_required ? 'required' : 'nullable'];
 
+            if ($field->field_type === 'consent') {
+                // Consent fields become required checkboxes when marked required.
+                $rules = [$field->is_required ? 'accepted' : 'nullable'];
+                $dynamicRules[$key] = $rules;
+                continue;
+            }
+
             if (in_array($field->field_type, ['text', 'textarea'], true)) {
                 $rules[] = 'string';
                 $rules[] = 'max:1000';
