@@ -4,7 +4,28 @@
 @section('body_class', 'min-h-screen bg-gradient-to-b from-violet-500 to-white py-10')
 
 @section('content')
-<div class="min-h-screen flex items-center justify-center">
+<div class="min-h-screen flex items-center justify-center relative">
+    @if (session('success'))
+        <div id="registration-success-modal" class="fixed inset-0 z-40 flex items-center justify-center px-4">
+            <div class="absolute inset-0 bg-slate-900/60"
+                 onclick="document.getElementById('registration-success-modal')?.remove();"></div>
+            <div class="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl border border-emerald-200 px-6 py-5 text-center">
+                <div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    ✓
+                </div>
+                <h2 class="text-base font-semibold text-emerald-800">Registration Successful</h2>
+                <p class="mt-2 text-sm text-emerald-700">
+                    {{ session('success') }}
+                </p>
+                <button type="button"
+                        class="mt-4 inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+                        onclick="document.getElementById('registration-success-modal')?.remove();">
+                    Close
+                </button>
+            </div>
+        </div>
+    @endif
+
     <div class="max-w-lg w-full bg-white rounded-2xl shadow-xl p-8 mx-4">
         <h1 class="text-2xl font-semibold text-slate-900 mb-6 text-center">Register</h1>
 
@@ -18,12 +39,6 @@
                 </svg>
             </a>
         </div>
-
-        @if (session('success'))
-            <div class="mb-4 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 text-sm">
-                {{ session('success') }}
-            </div>
-        @endif
 
         <form method="POST" action="{{ route('register.store') }}" class="space-y-4">
             @csrf
