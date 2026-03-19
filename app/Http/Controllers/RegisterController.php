@@ -159,7 +159,7 @@ class RegisterController extends Controller
 
         return redirect()
             ->route('register.index')
-            ->with('success', 'Registration successful. Kindly check your email or SMS for your code.');
+            ->with('success', 'Registration successful. Your 4-digit code is ' . $uniqueCode . '. Kindly check your email or SMS for your code as well.');
     }
 
     protected function generateUniqueCode(): string
